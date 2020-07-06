@@ -24,4 +24,5 @@ image1=slide.read_region((21595, 199595),0,(1024,1024))
 import matplotlib.pyplot as plt 
 plt.imshow(image1)
 plt.show()
+image1.save('1.png')
 
