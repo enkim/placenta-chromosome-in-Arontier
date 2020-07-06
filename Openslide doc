@@ -1,0 +1,27 @@
+
+#https://openslide.org/api/openslide_8h.html#a0eeecec682efdf2ef18c8426109acad0
+
+import openslide
+slide=openslide.OpenSlide('12-S -091120-1.mrxs')
+slide.detect_format('12-S -091120-1.mrxs') #format vendor of specified file 
+slide.level_count # number of levels in the slide resolution 
+slide.dimensions # !!!  (width, height) list of tupues 
+slide.level_dimensions # level 에 따른 dimension 임 
+slide.level_dimensions[0] # level 이 0인 경우 dimension 이 나옴. 이게 가장 고해상도 
+slide.level_downsamples #A list of downsample factors for each level of the slide. Typical level : level3 or 4 
+slide.properties # Metadata about the slide 
+slide.associated_images #Images, such as label or macro images, which are associated with this slide.  
+slide.get_thumbnail((1024,1024)) #thumnail 로 만들기 parameter 는 size tup
+
+
+### Read_Region ### 
+#read_region(location, level, size)¶  
+# location(tuple) : (x,y) top left 가 level0 refernece frame 이 됨
+# level(int) : the level number
+# size(tuple) :(width,height) : region size 가 됨!!!!!!!! 
+image1=slide.read_region((21595, 199595),0,(1024,1024))
+
+import matplotlib.pyplot as plt 
+plt.imshow(image1)
+plt.show()
+
