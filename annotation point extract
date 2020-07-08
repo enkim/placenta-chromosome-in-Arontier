@@ -1,0 +1,55 @@
+# -*- coding: utf-8 -*-
+"""
+Spyder Editor
+
+This is a temporary script file.
+"""
+
+import os
+import matplotlib.pyplot as plt
+import numpy as np 
+import cv2
+from skimage import io
+from PIL import Image
+import openslide 
+import matplotlib.pyplot as plt  
+
+#========================================================================
+# 이미지 리딩하기 
+os.chdir("/Users/Kimeunna/Dropbox/Python_ex/opencv_ex")
+slide=openslide.OpenSlide('12-S -091120-1.mrxs')
+slide.dimensions 
+slide.get_thumbnail((10240,10240)) 
+image1=slide.read_region((21595, 199595),0,(2048,2048)) 
+plt.imshow(image1)
+plt.show()
+
+#========================================================================
+# 좌표 뽑기 
+f=open("12-S -091120-1.txt",'r',encoding='UTF-8')
+xylist=[]
+xyrowlist=[]
+i=0
+
+for row in f:
+    if '/Volumes' in row: 
+        #wsi_path=row
+        continue
+    
+    elif '[Point:' in row: 
+        xy=row.split(', Point:')
+        xy[0]=(xy[0].lstrip('[Point: '))
+        xy[-1]=xy[-1].strip()
+        xy[-1]=xy[-1].rstrip(']')
+        for xystring in xy:
+            xloc=int(round(float(xystring.split(',')[0])))
+            yloc=int(round(float(xystring.split(',')[1])))
+            xyloc=(xloc,yloc)
+            xylist.append(xyloc)
+        xyrowlist.append(xylist)
+        i=+1
+        xylist=[]
+        
+print(len(xyrowlist[-1]))   
+
+#========================================================================
