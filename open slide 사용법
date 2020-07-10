@@ -1,0 +1,69 @@
+# Openslide 사용법  https://www.programmersought.com/article/8138145198/
+
+from openslide.deepzoom import DeepZoomGenerator
+print(slide1.detect_format('12-S -091120-1.mrxs'))
+slide.dimensions
+
+# slide of various attributes
+print(slide.properties)
+
+# downsamples
+downsamples=slide.level_downsamples
+downsamples.dimensions
+
+# Image size (width, height)
+[w,h]=slide.level_dimensions[0]
+print([w,h])
+
+# Get the thumbnail of the original image(206x400)
+simg=slide.get_thumbnail((206,400))
+
+# show thumbnail
+plt.imshow(simg)
+plt.show
+
+#implement the function of DeepZoomGenerator
+data_gen=DeepZoomGenerator(slide2,tile_size=1022,overlap=1,limit_bounds=False)
+
+#The number of Deep Zoom levels in the image
+print(data_gen.level_count)
+
+#A list of (tiles_x,tiles_y) tupules for each Deep Zoom lavel. leve_tiles[k]
+# are the tile coutns of k
+print(data_gen.level_tiles)
+
+#A list of (pixels_x, pixels_y) tuples for each \
+# Deep Zoom level. level_dimensions[k] are the dimensions of level k
+print(data_gen.level_dimensions)
+
+#Return a string containing the XML metadata for the Deep Zoom .dzi file
+#Parameters: format(str) the delivery format of the individual tiles(png or jpeg)
+print(data_gen.get_dzi('png'))
+
+#Show tiles
+
+#Return an RGB image for a tile.
+# level (int): the Deep Zoom level
+# address (tuple): the address of the tile within the level as a (column, row) tupule 
+
+tile_img1=data_gen.get_tile(11,(0,0))
+tile_img2=data_gen.get_tile(11,(0,1))
+
+plt.imshow(tile_img1)
+plt.show()
+
+plt.imshow(tile_img2)
+plt.show()
+
+#The setting principle for tile_size is: tile_size + 2*overlap = 2^n
+#Here, 1022+1*2=1024 (2^10)
+
+# Return the OpenSlide.read_region() arguments corresponding to the specified tile.
+# Most applications should use get_tile() instead.
+# level (int)  the Deep Zoom level
+# address (tuple)  the address of the tile within the level as a (column, row) tuple
+read_region = data_gen.get_tile_coordinates(11, (0,0))
+print(read_region)
+
+#Return a (pixels_x, pixels_y) tuple for the specified tile.
+print(data_gen.get_tile_dimensions(12, (0,0)))
