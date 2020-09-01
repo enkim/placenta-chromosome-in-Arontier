@@ -1,0 +1,58 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+Convert each data file to CSV file
+
+@author: Eunna Kim
+@since: July 20, 2020
+"""
+
+import os
+import glob
+from pprint import pprint  # for debugging only
+
+
+def parse_data_file(data_filename):
+    with open(data_filename, 'r', encoding='UTF-8') as stream:
+        header = stream.readline()  # first line containing data name
+        basename = os.path.basename(header)  # data name without path prefix
+        surgname, _ = os.path.splitext(basename)  # data name wihtout extension suffix
+
+        polygons = {}
+        polygonnum = 1
+        for row in stream:
+            if row.startswith('[Point:'):
+                row = row.strip().strip('[]')  # remove angle brackets at each end
+                points = row.split('Point:')
+                points = points[1:]  # remove the very first element which should be empty
+                coord_x = []  # prepare empty lists for x for this polygon
+                coord_y = []
+                for point in points:
+                    point = point.strip().strip(',')  # trim cumbersome characters
+                    x, y = point.split(',')  # split x and y coordinates
+                    coord_x.append(int(round(float(x))))  # store rounded up x coordinate
+                    coord_y.append(int(round(float(y))))  # store rounded up y coordinate
+                # store the polygon
+                polygons['poly_{}'.format(polygonnum)] = {'coord_x': coord_x, 'coord_y': coord_y}
+                polygonnum = polygonnum + 1
+
+        return surgname, polygons
+
+
+def parse_data_files(data_filenames):
+    dataset = {}
+
+    for data_filename in data_filenames:
+        surgname, polygon = parse_data_file(data_filename)
+        dataset['filename_{}'.format(surgname)] = polygon
+
+    return dataset
+
+
+if __name__ == '__main__':
+    # os.chdir("/Users/Kimeunna/Dropbox/아론티어/2020-08-30 he_additional")
+    # data_filenames = glob.glob('annotation_txt/*.txt')
+    data_filenames = ["2019S 031805001010.txt"]
+    dataset = parse_data_files(data_filenames)
+    pprint(dataset)
