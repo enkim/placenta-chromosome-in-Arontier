@@ -1,0 +1,169 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Jul 20 09:52:15 2020
+@author: Kimeunna
+"""
+# tmp1 : negative 새로 얻은 것
+# tmp1 = {'filename1':{'poly1':{'coord_x':[],'coord_y':[]}, 'poly2':{}....}, 'filename2':{}, 'filename3': {}}
+import os
+import glob
+import numpy as np
+import openslide
+import cv2
+import matplotlib.pyplot as plt
+from pprint import pprint  # for debugging only
+
+os.chdir("/Users/Kimeunna/Dropbox/아론티어/negative/")
+files=glob.glob('annotation_txt/*.txt')
+print(files)
+tmp1 = {}
+xylist = []
+i = 0
+coord_x = []
+coord_y = []
+
+for file in files:
+    with open(file, 'r', encoding='UTF-8') as f:
+        for row in f:
+            if '/Volumes' in row:
+                pathname = row.split('2020S')[0]
+                surgname, _ = os.path.splitext(os.path.basename(row))
+                tmp1['{}'.format(surgname)] = {}
+                tmp1['{}'.format(surgname)]['poly'] = {}
+                tmp1['{}'.format(surgname)]['mask'] = {}
+                j = 0
+                continue
+            elif '[Point:' in row: # pentagon level 이면
+                xy = row.split(', Point:')
+                num_poly = int(len(xy))
+                xy[0] = (xy[0].lstrip('[Point: '))
+                xy[-1] = xy[-1].strip()
+                xy[-1] = xy[-1].rstrip(']')
+                for xystring in xy:
+                    xloc = int(round(float(xystring.split(',')[0])))
+                    yloc = int(round(float(xystring.split(',')[1])))
+                    coord_x.append(xloc)
+                    coord_y.append(yloc)
+                tmp1['{}'.format(surgname)]['poly']['poly_{}'.format(j)] = {'coord_x': coord_x, 'coord_y': coord_y}
+                j = j + 1
+                coord_x = []
+                coord_y = []
+                continue
+        os.chdir(pathname)
+        slide = openslide.OpenSlide('{}.mrxs'.format(surgname))
+        shape_size = slide.dimensions
+        mask = np.zeros((shape_size[1] // (512), shape_size[0] // (512)))
+        poly_list = list(tmp1['{}'.format(surgname)]['poly'].keys())
+
+        k = 0
+        for k in range(len(poly_list)):
+            coord_x0 = [l // 512 for l in tmp1['{}'.format(surgname)]['poly']['poly_{}'.format(k)]['coord_x']]
+            coord_y0 = [l // 512 for l in tmp1['{}'.format(surgname)]['poly']['poly_{}'.format(k)]['coord_y']]
+            coord = np.array([coord_x0, coord_y0])
+            coord = coord.transpose(1, 0)
+            k = k + 1
+            mask = cv2.fillPoly(mask, [coord], 1)
+        tmp1['{}'.format(surgname)]['mask'] = mask
+    i = i + 1
+    os.chdir("/Users/Kimeunna/Dropbox/아론티어/negative/")
+
+pprint(tmp1)
+# ============================================
+# tmp2 : 원래 annotation 한 것
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+os.chdir("/Volumes/My Passport/placenta_result_0625/eval")
+files=glob.glob('annotation_txt/*.txt')
+print(files)
+tmp2 = {}
+xylist = []
+i = 0
+coord_x = []
+coord_y = []
+
+for file in files:
+    with open(file, 'r', encoding='UTF-8') as f:
+        for row in f:
+            if '/Volumes' in row:
+                pathname = os.path.dirname(row)
+                surgname, _ = os.path.splitext(os.path.basename(row))
+                tmp2['{}'.format(surgname)] = {}
+                tmp2['{}'.format(surgname)]['poly'] = {}
+                tmp2['{}'.format(surgname)]['mask'] = {}
+                j = 0
+                continue
+            elif '[Point:' in row: # pentagon level 이면
+                xy = row.split(', Point:')
+                num_poly = int(len(xy))
+                xy[0] = (xy[0].lstrip('[Point: '))
+                xy[-1] = xy[-1].strip()
+                xy[-1] = xy[-1].rstrip(']')
+                for xystring in xy:
+                    xloc = int(round(float(xystring.split(',')[0])))
+                    yloc = int(round(float(xystring.split(',')[1])))
+                    coord_x.append(xloc)
+                    coord_y.append(yloc)
+                tmp2['{}'.format(surgname)]['poly']['poly_{}'.format(j)] = {'coord_x': coord_x, 'coord_y': coord_y}
+                j = j + 1
+                coord_x = []
+                coord_y = []
+                continue
+        os.chdir(pathname)
+        slide = openslide.OpenSlide('{}.mrxs'.format(surgname))
+        shape_size = slide.dimensions
+        mask = np.zeros((shape_size[1] // (512), shape_size[0] // (512)))
+        poly_list = list(tmp2['{}'.format(surgname)]['poly'].keys())
+
+        k = 0
+        for k in range(len(poly_list)):
+            coord_x0 = [l // 512 for l in tmp2['{}'.format(surgname)]['poly']['poly_{}'.format(k)]['coord_x']]
+            coord_y0 = [l // 512 for l in tmp2['{}'.format(surgname)]['poly']['poly_{}'.format(k)]['coord_y']]
+            coord = np.array([coord_x0, coord_y0])
+            coord = coord.transpose(1, 0)
+            k = k + 1
+            mask = cv2.fillPoly(mask, [coord], 1)
+        tmp2['{}'.format(surgname)]['mask'] = mask
+    i = i + 1
+    os.chdir("/Volumes/My Passport/placenta_result_0625/eval")
+
+pprint(tmp2)
+
+# Dictionary 합치기
+tmp_total = {**tmp1, **tmp2}
+np.save("/Users/Kimeunna/Dropbox/아론티어/negative/he_annotation_diction_total",tmp_total)
+
+
+
+# ==============================================================
+# 실제 슬라이드 불러와서 검정하기
+import numpy as np
+from skimage import io, draw
+import cv2
+import matplotlib.pyplot as plt
+import openslide
+surgname = "2019S 031805001010" # test 용
+os.chdir("/Volumes/My Passport/placenta_result_0625/test")
+slide = openslide.OpenSlide('{}.mrxs'.format(surgname))
+slide.dimensions # original image size (90036, 202456)
+shape_size = slide.dimensions
+img = cv2.imread('{}.mrxs'.format(surgname))
+img.shape
+plt.imshow(img)
+for i in range(8):
+    yNDArray = np.array((np.array (tmp['2019S 031805001010']['poly']['poly_{}'.format(i)]['coord_x']))/(90036/704), dtype = 'int32')
+    xNDArray = np.array((np.array (tmp['2019S 031805001010']['poly']['poly_{}'.format(i)]['coord_y']))/(90036/704), dtype = 'int32')
+    x, y = draw.polygon(xNDArray, yNDArray)
+    img[x, y] = 1
+    io.imshow(img)
+io.show()
+# =============================================================
+tmp_total['2019S 031805001010']['mask']['poly_5']['coord_x']
+tmp_total['2019S 031805001010']['mask']
+
+io.imshow(tmp_total['2019S 031805001010']['mask'])
+io.show()
+
+np.sum(tmp_total['2019S 031805001010']['mask'].reshape(-1))
